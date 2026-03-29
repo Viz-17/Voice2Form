@@ -4,6 +4,7 @@ __pycache__/
 
 # Virtual environment
 venv/
+env/
 
 # Environment variables
 .env
@@ -16,3 +17,6 @@ audio/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Logs & misc
+*.log
