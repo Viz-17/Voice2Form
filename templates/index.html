@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tamil Voice Form Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+Thambi+2:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-ta">த</span>
+        <div class="logo-text">
+          <span class="logo-title">Tamil Voice Assistant</span>
+          <span class="logo-sub">தமிழ் குரல் படிவ உதவியாளர்</span>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-label" id="statusLabel">தயார்</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- Left: Chat Panel -->
+    <section class="chat-panel">
+      <div class="chat-messages" id="chatMessages">
+        <div class="bubble bot">
+          <div class="bubble-avatar">த</div>
+          <div class="bubble-content">
+            <p>வணக்கம்! நான் உங்கள் தமிழ் குரல் உதவியாளர்.</p>
+            <p class="sub">உங்கள் தகவல்களை பேசி தரவும். உங்கள் பெயர் என்ன?</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recorder -->
+      <div class="recorder-bar">
+        <div class="waveform" id="waveform">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <button class="mic-btn" id="micBtn" title="பேசுங்கள்">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <span class="mic-label" id="micLabel">பேசுங்கள்</span>
+        </button>
+        <div class="recorder-hint" id="recorderHint">மைக்கை அழுத்தி பேசுங்கள்</div>
+      </div>
+    </section>
+
+    <!-- Right: Form Panel -->
+    <aside class="form-panel">
+      <div class="form-header">
+        <h2>விண்ணப்ப படிவம்</h2>
+        <span class="form-progress-label" id="progressLabel">0/8 நிரப்பப்பட்டது</span>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+
+      <div class="form-fields" id="formFields">
+        <!-- Dynamically filled -->
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-reset" id="resetBtn">மீட்டமை</button>
+        <button class="btn-submit" id="submitBtn" disabled>சமர்ப்பிக்கவும்</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Debug panel (toggle) -->
+  <div class="debug-panel" id="debugPanel">
+    <div class="debug-header" onclick="toggleDebug()">
+      <span>🔍 Debug Info</span><span id="debugToggleIcon">▾</span>
+    </div>
+    <div class="debug-body" id="debugBody" style="display:none">
+      <div><strong>Tamil Text:</strong> <span id="dbTamil">—</span></div>
+      <div><strong>English:</strong> <span id="dbEnglish">—</span></div>
+      <div><strong>Extracted:</strong> <pre id="dbExtracted">—</pre></div>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
