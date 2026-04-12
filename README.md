@@ -101,3 +101,31 @@ In `utils/speech.py`, change:
 ```python
 _model = whisper.load_model("medium")  # Better accuracy
 ```
+
+## VERSION - 2
+
+## What's New in This Version
+
+### Voice & Extraction
+- Whisper `initial_prompt` added to bias Tamil form vocabulary recognition
+- Phonetic correction layer: fixes common mishears
+- Improved regex extraction: handles "my name is X", "I am X", "this is X"
+
+### Validation
+- Phone: must be exactly 10 digits, starting with 6–9
+- Aadhaar: must be exactly 12 digits
+- Invalid values are rejected and user is asked to retry
+
+### Dial Pad
+- Auto-opens when conversation reaches Phone or Aadhaar fields
+- Also opens when user taps those fields directly in the form panel
+- Save button stays disabled until correct digit count is entered
+
+### Confirmation Step
+- Before submission, all collected values are displayed for review
+- Data is saved to `data.json` ONLY after user confirms
+
+### Data Storage
+- Confirmed submissions are appended to `data.json`
+- Each entry includes a timestamp
+- View all submissions at `/submissions`

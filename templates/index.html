@@ -15,7 +15,8 @@
   <header class="header">
     <div class="header-inner">
       <div class="logo">
-        <span class="logo-ta">த</span>
+        <!--<span class="logo-ta">த</span>-->
+        <img src="/static/images/v2f1.png" alt="App Logo" class="logo-img">
         <div class="logo-text">
           <span class="logo-title">Tamil Voice Assistant</span>
           <span class="logo-sub">தமிழ் குரல் படிவ உதவியாளர்</span>
@@ -34,7 +35,9 @@
     <section class="chat-panel">
       <div class="chat-messages" id="chatMessages">
         <div class="bubble bot">
-          <div class="bubble-avatar">த</div>
+          <!--<div class="bubble-avatar">த</div> 
+          <div class="bubble-avatar">அ</div> -->
+          <img src="/static/images/bot.png" alt="bot" class="avatar-img">
           <div class="bubble-content">
             <p>வணக்கம்! நான் உங்கள் தமிழ் குரல் உதவியாளர்.</p>
             <p class="sub">உங்கள் தகவல்களை பேசி தரவும். உங்கள் பெயர் என்ன?</p>
@@ -76,9 +79,57 @@
         <!-- Dynamically filled -->
       </div>
 
+      <div class="dialpad-wrapper" id="dialpadWrapper" style="display:none">
+
+        <div class="dialpad-header">
+          <span class="dialpad-title" id="dialpadTitle">எண் உள்ளிடவும்</span>
+          <button class="dialpad-close" onclick="closeDialpad()">✕</button>
+        </div>
+
+        <!-- Display screen -->
+        <div class="dialpad-screen">
+          <span id="dialpadDisplay">—</span>
+          <span class="dialpad-hint-text" id="dialpadHintText"></span>
+        </div>
+
+        <!-- Number grid -->
+        <div class="dialpad-grid">
+          <button class="dial-key" onclick="dialPress('1')"><span class="dk-num">1</span></button>
+          <button class="dial-key" onclick="dialPress('2')"><span class="dk-num">2</span><span class="dk-sub">ABC</span></button>
+          <button class="dial-key" onclick="dialPress('3')"><span class="dk-num">3</span><span class="dk-sub">DEF</span></button>
+          <button class="dial-key" onclick="dialPress('4')"><span class="dk-num">4</span><span class="dk-sub">GHI</span></button>
+          <button class="dial-key" onclick="dialPress('5')"><span class="dk-num">5</span><span class="dk-sub">JKL</span></button>
+          <button class="dial-key" onclick="dialPress('6')"><span class="dk-num">6</span><span class="dk-sub">MNO</span></button>
+          <button class="dial-key" onclick="dialPress('7')"><span class="dk-num">7</span><span class="dk-sub">PQRS</span></button>
+          <button class="dial-key" onclick="dialPress('8')"><span class="dk-num">8</span><span class="dk-sub">TUV</span></button>
+          <button class="dial-key" onclick="dialPress('9')"><span class="dk-num">9</span><span class="dk-sub">WXYZ</span></button>
+          <button class="dial-key dial-clear" onclick="dialPress('clear')">C</button>
+          <button class="dial-key" onclick="dialPress('0')"><span class="dk-num">0</span></button>
+          <button class="dial-key dial-back"  onclick="dialPress('back')">⌫</button>
+        </div>
+
+        <!-- Submit row -->
+        <button class="dialpad-submit" id="dialpadSubmit" onclick="submitDialpad()">
+          சேமி / Save
+        </button>
+
+      </div>
+
       <div class="form-actions">
         <button class="btn-reset" id="resetBtn">மீட்டமை</button>
-        <button class="btn-submit" id="submitBtn" disabled>சமர்ப்பிக்கவும்</button>
+        <button class="btn-submit" id="submitBtn" onclick="showConfirm()" disabled>
+          சமர்ப்பிக்கவும்
+        </button>
+        
+        <div id="confirmPanel" style="display:none; padding:12px; border:1px solid #2a2f42; border-radius:10px; margin-top:10px;">
+          <p style="font-weight:700; margin-bottom:8px;">உறுதிப்படுத்தல் / Confirm</p>
+          <div id="confirmSummary"></div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button onclick="finalSubmit(true)"  style="flex:1; background:#27ae60; color:#fff; border:none; padding:9px; border-radius:7px; cursor:pointer;">✓ சரி / Yes</button>
+            <button onclick="finalSubmit(false)" style="flex:1; background:#c0392b; color:#fff; border:none; padding:9px; border-radius:7px; cursor:pointer;">✗ திருத்து / Edit</button>
+          </div>
+        </div>
+
       </div>
     </aside>
   </main>

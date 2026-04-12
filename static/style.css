@@ -1,7 +1,7 @@
 /* ─── Reset & Variables ─────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
+/*:root {
   --bg:          #0d0f14;
   --surface:     #141720;
   --surface2:    #1c2030;
@@ -17,6 +17,25 @@
   --font-ta:     'Baloo Thambi 2', sans-serif;
   --font-mono:   'DM Mono', monospace;
   --font-serif:  'Instrument Serif', serif;
+} */
+
+:root {
+  --bg:          #020617;   /* deep dark */
+  --surface:     #0f172a;
+  --surface2:    #1e293b;
+  --border:      #1e293b;
+
+  --accent:      #0ea5e9;   /* neon blue */
+  --accent2:     #ef4444;   /* red (recording) */
+  --accent3:     #22c55e;   /* green */
+
+  --text:        #e2e8f0;
+  --text-muted:  #64748b;
+
+  --bot-bubble:  rgba(14,165,233,0.1);
+  --user-bubble: rgba(30,41,59,0.8);
+
+  --radius:      12px;
 }
 
 body {
@@ -134,16 +153,28 @@ body::before {
   to   { opacity: 1; transform: translateY(0); }
 }
 .bubble.user { align-self: flex-end; flex-direction: row-reverse; }
-.bubble.bot  { align-self: flex-start; }
+.bubble.bot  { align-self: flex-start; box-shadow: 0 0 10px rgba(14,165,233,0.2) }
 
-.bubble-avatar {
+/*.bubble-avatar {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--accent);
   color: #000; font-weight: 700;
   display: grid; place-items: center;
   font-size: 0.85rem; flex-shrink: 0;
   margin-top: 2px;
+} */
+.bubble-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14,165,233,0.1);
+  border: 1px solid var(--accent);
 }
+
 .bubble.user .bubble-avatar { background: var(--surface2); color: var(--text-muted); }
 
 .bubble-content {
@@ -225,7 +256,8 @@ body::before {
   color: #000;
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   flex-shrink: 0;
-  box-shadow: 0 0 20px rgba(232,162,52,0.3);
+  /*box-shadow: 0 0 20px rgba(232,162,52,0.3); */
+  box-shadow: 0 0 15px rgba(14,165,233,0.6);
 }
 .mic-btn svg { width: 22px; height: 22px; }
 .mic-btn .mic-label { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.05em; }
@@ -416,4 +448,120 @@ html { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
   }
   .form-panel { max-height: 50vh; }
   .chat-panel { height: 55vh; }
+}
+
+/* ── Dial Pad ─────────────────────────────────────────────── */
+.dialpad-wrapper {
+  margin: 0 12px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  animation: dialIn .2s ease;
+}
+@keyframes dialIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dialpad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px 6px;
+}
+.dialpad-title  { font-size: .82rem; font-weight: 700; color: var(--accent); }
+.dialpad-close  {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 1rem; line-height: 1;
+  padding: 2px 6px; border-radius: 4px;
+}
+.dialpad-close:hover { color: var(--text); background: var(--border); }
+
+.dialpad-screen {
+  margin: 0 12px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dialpad-screen #dialpadDisplay {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  letter-spacing: .18em;
+  color: var(--text);
+  min-height: 28px;
+}
+.dialpad-hint-text {
+  font-size: .65rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.dialpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 0 12px 10px;
+}
+
+.dial-key {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 4px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  transition: background .12s, transform .1s;
+  user-select: none;
+}
+.dial-key:hover  { background: var(--border); }
+.dial-key:active { transform: scale(.93); background: var(--accent); }
+.dial-key:active .dk-num { color: #000; }
+
+.dk-num { font-size: 1.1rem; font-weight: 700; color: var(--text); line-height: 1; }
+.dk-sub { font-size: .48rem; letter-spacing: .1em; color: var(--text-muted); }
+
+.dial-clear { color: var(--text-muted); font-weight: 700; font-size: .9rem; }
+.dial-back  { font-size: 1rem; color: var(--text-muted); }
+.dial-clear:active, .dial-back:active { background: #3a1010 !important; }
+
+.dialpad-submit {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 0 12px 12px;
+  padding: 11px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-ta);
+  font-size: .92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .2s;
+}
+.dialpad-submit:hover    { background: #f0b040; }
+.dialpad-submit:disabled { opacity: .45; cursor: not-allowed; }
+.logo-img {
+  height: 50px;
+  object-fit: contain;
+}
+.avatar-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  animation: float 2s ease-in-out infinite;
+}
+@keyframes float {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
 }

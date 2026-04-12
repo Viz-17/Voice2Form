@@ -98,36 +98,31 @@ async function processAudio(blob) {
   const formData = new FormData();
   formData.append("audio", blob, "input.wav");
 
-  // Show user bubble (placeholder)
   const userBubbleId = addUserMessage("🎤 ...", true);
 
   try {
     const res  = await fetch("/process_audio", { method: "POST", body: formData });
     const data = await res.json();
 
-    // Update user bubble with transcription
     updateBubble(userBubbleId, data.tamil_text || "(தெளிவற்ற குரல்)");
 
-    // Update form
     renderFormFields(data.form_data);
     updateProgress(data.form_data);
 
-    // Bot reply
     if (data.response_tamil) {
       addBotMessage(data.response_tamil, data.extracted);
     }
 
-    // Play TTS
     if (data.tts_audio) {
       playAudio(data.tts_audio);
     }
 
-    // Update debug
-    document.getElementById("dbTamil").textContent    = data.tamil_text   || "—";
-    document.getElementById("dbEnglish").textContent  = data.english_text || "—";
+    document.getElementById("dbTamil").textContent     = data.tamil_text   || "—";
+    document.getElementById("dbEnglish").textContent   = data.english_text || "—";
     document.getElementById("dbExtracted").textContent = JSON.stringify(data.extracted, null, 2) || "—";
 
     currentField = data.next_field;
+
     if (data.all_done) {
       submitBtn.disabled = false;
       setStatus("active", "முடிந்தது!");
@@ -135,6 +130,24 @@ async function processAudio(blob) {
     } else {
       setStatus("active", "தயார்");
       recorderHint.textContent = "மைக்கை அழுத்தி பேசுங்கள்";
+
+      // ── AUTO-OPEN dial pad when conversation reaches phone or aadhaar ──
+      if (data.next_field && ["phone", "aadhaar"].includes(data.next_field)) {
+        setTimeout(() => openDialpad(data.next_field), 600);
+      }
+    }
+
+    // ── If voice failed validation for a numeric field, inform user ──
+    // (dial pad is already open from the block above; just show the message)
+    if (data.validation_errors && Object.keys(data.validation_errors).length) {
+      Object.keys(data.validation_errors).forEach(field => {
+        if (["phone", "aadhaar"].includes(field)) {
+          addBotMessage(
+            `${field === "phone" ? "தொலைபேசி" : "ஆதார்"} எண் சரியாக புரியவில்லை. ` +
+            `கீழே உள்ள dial pad பயன்படுத்தி உள்ளிடவும்.`
+          );
+        }
+      });
     }
 
   } catch (err) {
@@ -152,9 +165,16 @@ async function askNextQuestion() {
   try {
     const res  = await fetch("/next_question");
     const data = await res.json();
+
     if (data.field && data.tts_audio) {
       playAudio(data.tts_audio + "?t=" + Date.now());
     }
+
+    // ── AUTO-OPEN dial pad on page load if first question is phone/aadhaar ──
+    if (data.field && ["phone", "aadhaar"].includes(data.field)) {
+      setTimeout(() => openDialpad(data.field), 800);
+    }
+
   } catch(e) {}
 }
 
@@ -162,14 +182,29 @@ async function askNextQuestion() {
 function renderFormFields(data) {
   formFields.innerHTML = "";
   Object.entries(FIELD_META).forEach(([key, meta]) => {
-    const value = (data && data[key]) ? data[key] : "";
+    const value     = (data && data[key]) ? data[key] : "";
+    const isNumeric = ["phone", "aadhaar"].includes(key);
+
     const div = document.createElement("div");
     div.className = "form-field" + (value ? " filled" : "") + (currentField === key ? " active" : "");
     div.id = "field-" + key;
+
+    // ── Tap/click to open dial pad on unfilled numeric fields ──
+    if (isNumeric && !value) {
+      div.style.cursor = "pointer";
+      div.title        = "Click to open dial pad";
+      div.onclick      = () => openDialpad(key);
+    }
+
     div.innerHTML = `
-      <div class="field-label">${meta.en} / ${meta.label}</div>
+      <div class="field-label">
+        ${meta.en} / ${meta.label}
+        ${isNumeric && !value ? '<span class="dialpad-badge">⌨ Dial</span>' : ""}
+      </div>
       <div class="field-value ${value ? "" : "empty"}">
-        ${value ? `<span class="field-check">✓</span> ${escHtml(value)}` : "நிரப்பப்படவில்லை"}
+        ${value
+          ? `<span class="field-check">✓</span> ${escHtml(value)}`
+          : "நிரப்பப்படவில்லை"}
       </div>
     `;
     formFields.appendChild(div);
@@ -191,6 +226,13 @@ async function fetchForm() {
     const data = await res.json();
     renderFormFields(data);
     updateProgress(data);
+
+    // ── AUTO-OPEN dial pad on page load if phone/aadhaar is first empty field ──
+    const firstEmpty = Object.keys(FIELD_META).find(k => !data[k]);
+    if (firstEmpty && ["phone", "aadhaar"].includes(firstEmpty)) {
+      setTimeout(() => openDialpad(firstEmpty), 800);
+    }
+
   } catch(e) {}
 }
 
@@ -253,7 +295,7 @@ function scrollChat() {
 
 // ── Status ─────────────────────────────────────────────────────
 function setStatus(state, label) {
-  statusDot.className   = "status-dot" + (state ? " " + state : "");
+  statusDot.className    = "status-dot" + (state ? " " + state : "");
   statusLabel.textContent = label;
 }
 
@@ -268,6 +310,7 @@ resetBtn.addEventListener("click", async () => {
   if (!confirm("படிவத்தை மீட்டமைக்கவா?")) return;
   try {
     await fetch("/reset_form", { method: "POST" });
+    closeDialpad();                      // ← close dial pad if open during reset
     renderFormFields({});
     updateProgress({});
     chatMessages.innerHTML = `
@@ -308,4 +351,144 @@ function escHtml(str) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+// ══════════════════════════════════════════════════════════════
+// DIAL PAD
+// ══════════════════════════════════════════════════════════════
+
+let _dialField  = null;   // "phone" | "aadhaar"
+let _dialBuffer = "";
+
+const DIAL_LIMITS = { phone: 10, aadhaar: 12 };
+const DIAL_HINTS  = {
+  phone:   "10 இலக்கங்கள் • 6, 7, 8 அல்லது 9 இல் தொடங்க வேண்டும்",
+  aadhaar: "12 இலக்கங்கள் • Aadhaar number"
+};
+
+// ── Open ───────────────────────────────────────────────────────
+function openDialpad(field) {
+  _dialField  = field;
+  _dialBuffer = "";
+
+  const wrapper = document.getElementById("dialpadWrapper");
+  if (!wrapper) return;                 // safety — HTML not yet added
+
+  wrapper.style.display = "block";
+  document.getElementById("dialpadTitle").textContent =
+    field === "phone" ? "📞 தொலைபேசி எண்" : "🪪 ஆதார் எண்";
+  document.getElementById("dialpadHintText").textContent = DIAL_HINTS[field] || "";
+
+  _updateScreen();
+}
+
+// ── Close ──────────────────────────────────────────────────────
+function closeDialpad() {
+  const wrapper = document.getElementById("dialpadWrapper");
+  if (wrapper) wrapper.style.display = "none";
+  _dialField  = null;
+  _dialBuffer = "";
+}
+
+// ── Key press ──────────────────────────────────────────────────
+function dialPress(key) {
+  const limit = DIAL_LIMITS[_dialField] || 12;
+  if (key === "clear") {
+    _dialBuffer = "";
+  } else if (key === "back") {
+    _dialBuffer = _dialBuffer.slice(0, -1);
+  } else if (_dialBuffer.length < limit) {
+    _dialBuffer += key;
+  }
+  _updateScreen();
+}
+
+// ── Update display screen ──────────────────────────────────────
+function _updateScreen() {
+  const limit = DIAL_LIMITS[_dialField] || 12;
+
+  // Format with spaces: XXXXX XXXXX for phone,  XXXX XXXX XXXX for aadhaar
+  let display = _dialBuffer;
+  if (_dialField === "aadhaar" && display.length > 4) {
+    display = display.match(/.{1,4}/g).join(" ");
+  } else if (_dialField === "phone" && display.length > 5) {
+    display = display.slice(0, 5) + " " + display.slice(5);
+  }
+
+  document.getElementById("dialpadDisplay").textContent = display || "—";
+
+  const ok  = _dialBuffer.length === limit;
+  const btn = document.getElementById("dialpadSubmit");
+  btn.disabled    = !ok;
+  btn.textContent = ok
+    ? "✓ சேமி / Save"
+    : `${_dialBuffer.length} / ${limit} இலக்கங்கள்`;
+}
+
+// ── Submit to backend ──────────────────────────────────────────
+async function submitDialpad() {
+  if (!_dialField || !_dialBuffer) return;
+
+  const savedField = _dialField;       // capture before closeDialpad() clears it
+
+  try {
+    const res  = await fetch("/manual_input", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ field: savedField, value: _dialBuffer })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      closeDialpad();
+      renderFormFields(data.form_data);
+      updateProgress(data.form_data);
+      addBotMessage(
+        `✓ ${savedField === "phone" ? "தொலைபேசி எண்" : "ஆதார் எண்"} சேமிக்கப்பட்டது.`
+      );
+
+      // If next empty field is also numeric, open dial pad straight away
+      if (data.next_field && ["phone", "aadhaar"].includes(data.next_field)) {
+        setTimeout(() => openDialpad(data.next_field), 600);
+      }
+
+    } else {
+      addBotMessage(`✗ ${data.error} — மீண்டும் முயற்சிக்கவும்.`);
+    }
+
+  } catch (e) {
+    addBotMessage("பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.");
+  }
+}
+
+async function showConfirm() {
+    const res  = await fetch("/confirm_preview");
+    const data = await res.json();
+
+    const summary = document.getElementById("confirmSummary");
+    summary.innerHTML = Object.entries(data.filled)
+        .map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2f42">
+                           <span style="color:#7a8099">${k}</span>
+                           <span style="font-weight:600">${v}</span>
+                         </div>`)
+        .join("");
+
+    document.getElementById("confirmPanel").style.display = "block";
+    document.getElementById("submitBtn").style.display    = "none";
+}
+
+
+async function finalSubmit(confirmed) {
+    if (confirmed) {
+        const res  = await fetch("/confirm_submit", { method: "POST" });
+        const data = await res.json();
+        addBotMessage(data.message || "சமர்ப்பிக்கப்பட்டது!");
+        if (data.tts_audio) playAudio(data.tts_audio + "?t=" + Date.now());
+        document.getElementById("confirmPanel").style.display = "none";
+        submitBtn.disabled = true;
+    } else {
+        document.getElementById("confirmPanel").style.display = "none";
+        document.getElementById("submitBtn").style.display = "block";
+        addBotMessage("சரி — திருத்தலாம். எந்த தகவலை மாற்ற வேண்டும்?");
+    }
 }

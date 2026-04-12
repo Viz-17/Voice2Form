@@ -6,6 +6,22 @@ Hybrid approach: Tamil keyword rules + English pattern matching
 
 import re
 
+# ── Phonetic correction dict ───────────────────────────────────
+_CORRECTIONS = {
+    "aan":       "ஆண்",
+    "pen":       "பெண்",
+    "chennoi":   "chennai",
+    "chenai":    "chennai",
+    "maduri":    "madurai",
+    "trichy":    "tiruchirappalli",
+    "zero":"0","one":"1","two":"2","three":"3","four":"4",
+    "five":"5","six":"6","seven":"7","eight":"8","nine":"9",
+}
+
+def correct_text(text: str) -> str:
+    words = text.lower().split()
+    return " ".join(_CORRECTIONS.get(w, w) for w in words)
+
 # ─── Tamil keyword maps ────────────────────────────────────────────────────────
 TAMIL_NAME_KEYWORDS     = ["பெயர்", "என் பெயர்", "பேர்"]
 TAMIL_AGE_KEYWORDS      = ["வயது", "வயசு","வயசி"]
@@ -28,11 +44,13 @@ EXCLUDE_WORDS = [
     "ஆண்", "பெண்"
 ]
 
+
 def extract_form_fields(english_text: str, tamil_text: str = "") -> dict:
     """
     Extract form fields from English translated text, with Tamil fallback rules.
     Returns dict with any found fields.
     """
+    english_text = correct_text(english_text)
     result = {}
     eng = english_text.lower()
     tam = tamil_text
@@ -110,11 +128,13 @@ def extract_form_fields(english_text: str, tamil_text: str = "") -> dict:
 
 def _extract_name_english(eng_lower: str, original: str) -> str:
     patterns = [
-        r"my name is ([A-Za-z\s]+)",
-        r"name is ([A-Za-z\s]+)",
-        r"i am ([A-Za-z\s]+)",
-        r"i'm ([A-Za-z\s]+)",
-        r"call me ([A-Za-z\s]+)",
+        r"my name is ([A-Za-z]{2,25})",
+        r"name is ([A-Za-z]{2,25})",
+        r"this is ([A-Za-z]{2,25})",
+        r"call me ([A-Za-z]{2,25})",
+        r"i'?m ([A-Za-z]{2,25})",
+        r"i am ([A-Za-z]{2,25})",
+        r"i'm ([A-Za-z]{2,25})",
     ]
     for p in patterns:
         m = re.search(p, eng_lower)
