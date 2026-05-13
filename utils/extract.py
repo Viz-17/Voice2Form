@@ -4,8 +4,9 @@ Extract form fields from English (translated) text and Tamil text directly.
 Hybrid approach: Tamil keyword rules + English pattern matching
 """
 
+from email.mime import text
 import re
-
+import re as _re
 # ── Phonetic correction dict ───────────────────────────────────
 _CORRECTIONS = {
     "aan":       "ஆண்",
@@ -226,4 +227,120 @@ def _extract_by_tamil_keyword(tamil: str, keywords: list, numeric=False) -> str:
                 val = re.split(r'[,\.\n,]', remainder)[0].strip()
                 if val:
                     return val
+    return ""
+
+
+ 
+ 
+
+def extract_account_number(text: str) -> str:
+    """Detect a 10-digit account number. Handles spaced groups."""
+    # collapsed = _re.sub(r'(?<=\d)[\s\-](?=\d)', '', text)
+    # m = _re.search(r'\b(\d{10})\b', collapsed)
+    # return m.group(1) if m else ""
+    collapsed = _re.sub(r'(?<=\d)[\s,\-]+(?=\d)', '', text)
+    
+    # 2. Look for any contiguous sequence of 9 to 18 digits
+    m = _re.search(r'\b(\d{9,18})\b', collapsed)
+    if m:
+        return m.group(1)
+    return ""
+ 
+ 
+def extract_amount(text: str) -> str:
+    """Detect amount. Handles digits, commas, spoken words."""
+    cleaned = _re.sub(r'(rs\.?|rupees?|inr|₹)', '', text.lower()).strip()
+    m = _re.search(r'\b(\d{1,3}(?:,\d{3})*|\d+)\b', cleaned)
+    if m:
+        return m.group(1).replace(',', '')
+    word_map = {
+        "hundred": "100", "two hundred": "200", "five hundred": "500",
+        "one thousand": "1000", "thousand": "1000",
+        "two thousand": "2000", "five thousand": "5000",
+        "ten thousand": "10000", "fifty thousand": "50000",
+        "one lakh": "100000",
+    }
+    for phrase, num in word_map.items():
+        if phrase in cleaned:
+            return num
+    return ""
+ 
+ 
+def extract_challan_name(text: str) -> str:
+    """
+    Extract name from English + Tamil romanized patterns.
+    Updated with Tamil regex patterns per spec.
+    """
+    patterns = [
+        r"my name is ([A-Za-z]{2,25})",
+        r"name is ([A-Za-z]{2,25})",
+        r"i am ([A-Za-z]{2,25})",
+        r"i'?m ([A-Za-z]{2,25})",
+        r"for ([A-Za-z]{2,25})",
+        r"account of ([A-Za-z]{2,25})",
+        # Tamil romanized
+        r"en peyar ([A-Za-z]{2,25})",
+        r"peyar ([A-Za-z]{2,25})",
+        # Tamil unicode
+        r"என் பெயர் ([A-Za-z]{2,25})",
+        r"பெயர் ([A-Za-z]{2,25})",
+    ]
+    for pat in patterns:
+        m = _re.search(pat, text, _re.IGNORECASE)
+        if m:
+            return m.group(1).strip().title()
+    return ""
+ 
+ 
+def extract_transaction_type(text: str) -> str:
+    """
+    Detect Deposit / Withdrawal from Tamil + English keywords.
+    Updated with full keyword list per spec.
+    """
+    text_lower = text.lower()
+ 
+    deposit_keywords = [
+        "deposit", "panam podanum", "பணம் போடணும்", "போடணும்",
+        "வைப்பு", "podanum", "credit", "add", "put in", "save",
+        "போட", "selavu", "சேமி",
+    ]
+    withdrawal_keywords = [
+        "withdraw", "withdrawal", "panam edukkanum", "எடுக்கணும்",
+        "edukkanum", "debit", "take out", "எடு", "எடுக்கணும்",
+        "எடுக்க",
+    ]
+ 
+    for kw in deposit_keywords:
+        if kw in text_lower:
+            return "Deposit"
+    for kw in withdrawal_keywords:
+        if kw in text_lower:
+            return "Withdrawal"
+    return ""
+ 
+
+def extract_tamil_name(tamil_text):
+    """
+    Extracts only the name from a Tamil sentence.
+    Looks for words after "என் பெயர்", "பெயர்", or "நான்".
+    """
+    # Regex patterns for Tamil text
+    patterns = [
+        r"என் பெயர்\s+([^\s]+)",   # En peyar [Name]
+        r"பெயர்\s+([^\s]+)",      # Peyar [Name]
+        r"நான்\s+([^\s]+)"         # Naan [Name]
+    ]
+    
+    for pat in patterns:
+        match = re.search(pat, tamil_text)
+        if match:
+            # Return just the extracted name
+            return match.group(1).strip()
+            
+    # Fallback: If they only spoke 1 or 2 words (e.g., just saying "விஷ்வா"), 
+    # assume the whole thing is the name.
+    words = tamil_text.split()
+    if len(words) <= 2:
+        return tamil_text.strip()
+        
     return ""

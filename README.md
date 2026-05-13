@@ -1,10 +1,8 @@
 # Voice2Form - Tamil Voice Form Assistant
 
-A voice-driven form filling system that converts Tamil speech into structured data using Whisper ASR and NLP.
-Supports Tamil-English mixed input and provides audio feedback using TTS.
+A voice-driven form filling system that converts Tamil speech into structured form data using Whisper ASR, translation, and rule-based extraction.
 
-## 🚧 Status
-Initial build – actively improving Tamil extraction accuracy and UI
+The system allows users to fill forms and challan details using voice input and provides Tamil audio feedback.
 
 
 ## Quick Setup
@@ -102,30 +100,28 @@ In `utils/speech.py`, change:
 _model = whisper.load_model("medium")  # Better accuracy
 ```
 
-## VERSION - 2
+## Changelog
 
-## What's New in This Version
+### Version 3 (current)
 
-### Voice & Extraction
-- Whisper `initial_prompt` added to bias Tamil form vocabulary recognition
-- Phonetic correction layer: fixes common mishears
-- Improved regex extraction: handles "my name is X", "I am X", "this is X"
+- **Bank challan form** — new voice-driven flow for bank transactions (Deposit / Withdrawal)
+- **Challan fields**: name, account number, bank, branch, transaction type, amount
+- **Length-aware account validation** — accepts 9–18 digit account numbers; rejects anything outside that range with a Tamil error message
+- **Last-digit mismatch detection** — if all digits except the last match a known account, the user is warned and shown the correct number
+- **Name-first enforcement** — account/amount/transaction steps require a name to be established first
+- **Challan data separation** — submissions saved to `challandata.json`, separate from general form data (`data.json`)
+- **Challan endpoints** — `/process_challan`, `/challan_lookup`, `/confirm_challan`
 
-### Validation
-- Phone: must be exactly 10 digits, starting with 6–9
-- Aadhaar: must be exactly 12 digits
-- Invalid values are rejected and user is asked to retry
+### Version 2
 
-### Dial Pad
-- Auto-opens when conversation reaches Phone or Aadhaar fields
-- Also opens when user taps those fields directly in the form panel
-- Save button stays disabled until correct digit count is entered
+- **Multi-model ASR** — `model` parameter selects Whisper or Vosk at request time
+- **WER / accuracy metrics** — pass `ground_truth` to `/process_audio` to evaluate transcription quality
+- **Phonetic correction layer** — fixes common Whisper mishears for Tamil
+- **Dial pad auto-open** — triggers automatically for Phone and Aadhaar fields
+- **Confirmation gate** — data saved to JSON only after explicit user confirmation
 
-### Confirmation Step
-- Before submission, all collected values are displayed for review
-- Data is saved to `data.json` ONLY after user confirms
+### Version 1
 
-### Data Storage
-- Confirmed submissions are appended to `data.json`
-- Each entry includes a timestamp
-- View all submissions at `/submissions`
+- Basic Tamil voice form filling with Whisper + gTTS
+- Single-account mock DB
+- Manual field entry fallback

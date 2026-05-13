@@ -1,0 +1,145 @@
+<!--
+  ════════════════════════════════════════════════════════════
+  index.html — TWO TARGETED INSERTIONS ONLY
+  Everything else in your file stays exactly as-is.
+  ════════════════════════════════════════════════════════════
+
+  ── INSERTION 1 ─────────────────────────────────────────────
+  FIND this exact line in your recorder-bar div (~line 66):
+
+      <div class="recorder-hint" id="recorderHint">மைக்கை அழுத்தி பேசுங்கள்</div>
+    </div>   ← closes recorder-bar
+  </section> ← closes chat-panel
+
+  ADD the model selector block AFTER the recorder-hint div,
+  still INSIDE the <section class="chat-panel">:
+-->
+
+        <div class="recorder-hint" id="recorderHint">மைக்கை அழுத்தி பேசுங்கள்</div>
+
+        <!-- ── NEW: Model selector + Ground truth ──────────── -->
+        <div class="model-controls" id="modelControls">
+          <div class="model-row">
+            <label class="model-label" for="modelSelect">🤖 STT Model:</label>
+            <select id="modelSelect" class="model-select">
+              <option value="whisper" selected>Whisper (Default)</option>
+              <option value="google">Google STT</option>
+              <option value="vosk">Vosk (Offline)</option>
+            </select>
+          </div>
+          <div class="model-row">
+            <label class="model-label" for="groundTruth">📝 Ground Truth <span class="optional-tag">(optional)</span>:</label>
+            <input type="text" id="groundTruth" class="ground-truth-input"
+                   placeholder="Enter expected Tamil text to compute accuracy" />
+          </div>
+        </div>
+        <!-- ── END NEW ───────────────────────────────────────── -->
+
+      </div> <!-- closes recorder-bar -->
+    </section> <!-- closes chat-panel -->
+
+
+<!--
+  ── INSERTION 2 ─────────────────────────────────────────────
+  FIND the debug-body div (~lines 411-415):
+
+    <div class="debug-body" id="debugBody" style="display:none">
+      <div><strong>Tamil Text:</strong> <span id="dbTamil">—</span></div>
+      <div><strong>English:</strong> <span id="dbEnglish">—</span></div>
+      <div><strong>Extracted:</strong> <pre id="dbExtracted">—</pre></div>
+    </div>
+
+  REPLACE with the version below (adds 3 new metric rows):
+-->
+
+    <div class="debug-body" id="debugBody" style="display:none">
+      <div><strong>Tamil Text:</strong> <span id="dbTamil">—</span></div>
+      <div><strong>English:</strong> <span id="dbEnglish">—</span></div>
+      <div><strong>Extracted:</strong> <pre id="dbExtracted">—</pre></div>
+      <!-- ── NEW metric rows ── -->
+      <div><strong>Model Used:</strong> <span id="dbModel">—</span></div>
+      <div class="metrics-row">
+        <strong>WER:</strong>
+        <span id="wer" class="metric-badge metric-wer">—</span>
+        &nbsp;&nbsp;
+        <strong>Accuracy:</strong>
+        <span id="accuracy" class="metric-badge metric-acc">—</span>
+      </div>
+    </div>
+
+
+<!--
+  ── CSS to paste at the bottom of static/style.css ──────────
+  (Copy the block below into your style.css)
+-->
+<style id="PASTE_INTO_STYLE_CSS_NOT_HERE">
+/* ── Model selector controls ──────────────────────────────── */
+.model-controls {
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.model-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.model-label {
+  font-size: .72rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 110px;
+}
+.optional-tag {
+  font-size: .62rem;
+  color: var(--text-muted);
+  opacity: .7;
+}
+.model-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 10px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .2s;
+}
+.model-select:focus { border-color: var(--accent); }
+
+.ground-truth-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 10px;
+  color: var(--text);
+  font-family: var(--font-ta);
+  font-size: .78rem;
+  outline: none;
+  transition: border-color .2s;
+  min-width: 180px;
+}
+.ground-truth-input:focus { border-color: var(--accent); }
+.ground-truth-input::placeholder { color: var(--text-muted); font-style: italic; }
+
+/* ── Metric badges in debug panel ─────────────────────────── */
+.metrics-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.metric-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  font-weight: 700;
+}
+.metric-wer { background: rgba(231,76,60,.12); color: #e74c3c; }
+.metric-acc { background: rgba(39,174,96,.12);  color: #2ecc71; }
+</style>

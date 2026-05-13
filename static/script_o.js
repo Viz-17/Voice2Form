@@ -98,13 +98,6 @@ async function processAudio(blob) {
   const formData = new FormData();
   formData.append("audio", blob, "input.wav");
 
-  // ── NEW: send selected model and optional ground truth ─────
-  const modelSelect  = document.getElementById("modelSelect");
-  const groundTruth  = document.getElementById("groundTruth");
-  formData.append("model",        modelSelect  ? modelSelect.value  : "whisper");
-  formData.append("ground_truth", groundTruth  ? groundTruth.value  : "");
-  // ── END NEW ────────────────────────────────────────────────
-
   const userBubbleId = addUserMessage("🎤 ...", true);
 
   try {
@@ -127,15 +120,6 @@ async function processAudio(blob) {
     document.getElementById("dbTamil").textContent     = data.tamil_text   || "—";
     document.getElementById("dbEnglish").textContent   = data.english_text || "—";
     document.getElementById("dbExtracted").textContent = JSON.stringify(data.extracted, null, 2) || "—";
-
-    // ── NEW: show model used + WER / accuracy ─────────────────
-    const dbModel    = document.getElementById("dbModel");
-    const werEl      = document.getElementById("wer");
-    const accEl      = document.getElementById("accuracy");
-    if (dbModel) dbModel.textContent = data.model_used || "whisper";
-    if (werEl)   werEl.textContent   = (data.metrics && data.metrics.wer      != null) ? data.metrics.wer      : "—";
-    if (accEl)   accEl.textContent   = (data.metrics && data.metrics.accuracy != null) ? data.metrics.accuracy : "—";
-    // ── END NEW ──────────────────────────────────────────────
 
     currentField = data.next_field;
 

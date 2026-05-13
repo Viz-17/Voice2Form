@@ -26,6 +26,9 @@
         <span class="status-dot" id="statusDot"></span>
         <span class="status-label" id="statusLabel">தயார்</span>
       </div>
+      <button class="challan-toggle-btn" id="challanToggleBtn" onclick="toggleChallanMode()">
+        🏦 Challan Mode
+      </button>
     </div>
   </header>
 
@@ -61,6 +64,21 @@
           <span class="mic-label" id="micLabel">பேசுங்கள்</span>
         </button>
         <div class="recorder-hint" id="recorderHint">மைக்கை அழுத்தி பேசுங்கள்</div>
+        <div class="model-controls" id="modelControls">
+          <div class="model-row">
+            <label class="model-label" for="modelSelect">🤖 STT Model:</label>
+            <select id="modelSelect" class="model-select">
+              <option value="whisper" selected>Whisper (Default)</option>
+              <option value="google">Google STT</option>
+              <option value="vosk">Vosk (Offline)</option>
+            </select>
+          </div>
+          <div class="model-row">
+            <label class="model-label" for="groundTruth">📝 Ground Truth <span class="optional-tag">(optional)</span>:</label>
+            <input type="text" id="groundTruth" class="ground-truth-input"
+                   placeholder="Enter expected Tamil text to compute accuracy" />
+          </div>
+        </div>
       </div>
     </section>
 
@@ -134,6 +152,272 @@
     </aside>
   </main>
 
+  <section class="challan-section" id="challanSection" style="display:none">
+ 
+  <div class="challan-topbar">
+    <div class="challan-brand">
+      <span class="challan-icon">🏦</span>
+      <div>
+        <span class="challan-title">Bank Challan</span>
+        <span class="challan-sub">வங்கி சலான் படிவம்</span>
+      </div>
+    </div>
+    <button class="challan-back-btn" onclick="toggleChallanMode()">← Back to Voice Form</button>
+  </div>
+ 
+  <div class="challan-body">
+ 
+    <!-- ── LEFT: Step-by-step form ─────────────────────────── -->
+    <div class="challan-left">
+ 
+      <!-- Progress -->
+      <div class="ch-progress-wrap">
+        <div class="ch-progress-track">
+          <div class="ch-progress-fill" id="chProgressFill"></div>
+        </div>
+        <span class="ch-progress-label" id="chProgressLabel">Step 1 of 6</span>
+      </div>
+ 
+      <!-- STEP 1: Name -->
+      <div class="ch-step active-step" id="chStep-name" data-step="name">
+        <div class="ch-step-header">
+          <span class="ch-step-num">1</span>
+          <span class="ch-step-title">பெயர் / Name</span>
+          <span class="ch-step-badge" id="chBadge-name"></span>
+        </div>
+        <div class="ch-step-body">
+          <input class="challan-input" type="text" id="chInput-name"
+                 placeholder="உங்கள் பெயர் உள்ளிடவும்"
+                 oninput="challanManualInput('name', this.value)" />
+          <div class="ch-voice-row">
+            <button class="ch-mic-btn" id="chMic-name" onclick="challanVoiceStep('name')">
+              🎤 <span>பேசுங்கள்</span>
+            </button>
+            <span class="ch-listening-text" id="chListen-name" style="display:none">
+              🎤 கேட்கிறது...
+            </span>
+          </div>
+          <div class="ch-confirm-box" id="chConfirm-name" style="display:none">
+            <span class="ch-confirm-label">நீங்கள் சொன்னது:</span>
+            <span class="ch-confirm-value" id="chConfirmVal-name"></span>
+            <div class="ch-confirm-btns">
+              <button class="ch-btn-yes" onclick="confirmStep('name')">✅ சரி</button>
+              <button class="ch-btn-no"  onclick="rejectStep('name')">❌ மாற்று</button>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- STEP 2: Account Number -->
+      <div class="ch-step ch-step-locked" id="chStep-account" data-step="account">
+        <div class="ch-step-header">
+          <span class="ch-step-num">2</span>
+          <span class="ch-step-title">கணக்கு எண் / Account Number</span>
+          <span class="ch-step-badge" id="chBadge-account"></span>
+        </div>
+        <div class="ch-step-body">
+          <div class="challan-input-row">
+            <input class="challan-input" type="tel" id="chInput-account"
+                   placeholder="account number"
+                   maxlength="18" inputmode="numeric" pattern="[0-9]*"
+                   oninput="challanManualInput('account', this.value)" disabled />
+            <!-- <button class="dialpad-icon-btn" id="chDialBtn-account" disabled
+                    onclick="document.getElementById('chInput-account').focus()">⌨</button> -->
+            <button class="dialpad-icon-btn" onclick="openDialpad('account')">⌨</button>  
+          </div>
+          <div class="ch-voice-row">
+            <button class="ch-mic-btn" id="chMic-account"
+                    onclick="challanVoiceStep('account')" disabled>
+              🎤 <span>பேசுங்கள்</span>
+            </button>
+            <span class="ch-listening-text" id="chListen-account" style="display:none">
+              🎤 கேட்கிறது...
+            </span>
+          </div>
+          <!-- Normal confirm (no warning) -->
+          <div class="ch-confirm-box" id="chConfirm-account" style="display:none">
+            <span class="ch-confirm-label">நீங்கள் சொன்னது:</span>
+            <span class="ch-confirm-value" id="chConfirmVal-account"></span>
+            <div class="ch-confirm-btns">
+              <button class="ch-btn-yes" onclick="confirmStep('account')">✅ சரி</button>
+              <button class="ch-btn-no"  onclick="rejectStep('account')">❌ மாற்று</button>
+            </div>
+          </div>
+          <!-- Last-digit warning (replaces confirm box when warning exists) -->
+          <div class="ch-warning-box" id="chWarning-account" style="display:none">
+            <div class="ch-warning-text" id="chWarningText-account"></div>
+            <div class="ch-confirm-btns">
+              <button class="ch-btn-yes" onclick="acceptSuggested()">✔ ஆம், இதுதான்</button>
+              <button class="ch-btn-no"  onclick="rejectSuggested()">✏ இல்லை, மாற்று</button>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- STEP 3: Bank & Branch (read-only, shown after account confirmed) -->
+      <div class="ch-step ch-step-locked" id="chStep-bank" data-step="bank">
+        <div class="ch-step-header">
+          <span class="ch-step-num">3</span>
+          <span class="ch-step-title">வங்கி விவரங்கள் / Bank Details</span>
+          <span class="ch-step-badge" id="chBadge-bank"></span>
+        </div>
+        <div class="ch-step-body">
+          <div class="challan-autofill-row">
+            <div class="challan-field-group">
+              <label class="challan-label">Bank / வங்கி</label>
+              <input class="challan-input autofill" type="text" id="chInput-bank"
+                     placeholder="கணக்கில் இருந்து நிரப்பப்படும்" readonly disabled />
+            </div>
+            <div class="challan-field-group">
+              <label class="challan-label">Branch / கிளை</label>
+              <input class="challan-input autofill" type="text" id="chInput-branch"
+                     placeholder="கணக்கில் இருந்து நிரப்பப்படும்" readonly disabled />
+            </div>
+          </div>
+          <div class="ch-confirm-box" id="chConfirm-bank" style="display:none">
+            <span class="ch-confirm-label">விவரங்கள் சரியா?</span>
+            <div class="ch-confirm-btns">
+              <button class="ch-btn-yes" onclick="confirmStep('bank')">✅ சரி, தொடரவும்</button>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- STEP 4: Transaction Type -->
+      <div class="ch-step ch-step-locked" id="chStep-txn" data-step="txn">
+        <div class="ch-step-header">
+          <span class="ch-step-num">4</span>
+          <span class="ch-step-title">பரிவர்த்தனை வகை / Transaction Type</span>
+          <span class="ch-step-badge" id="chBadge-txn"></span>
+        </div>
+        <div class="ch-step-body">
+          <div class="txn-buttons">
+            <button class="txn-btn deposit" id="txnDeposit"
+                    onclick="selectTxn('Deposit')" disabled>
+              🟢 Deposit<br><span>வைப்பு</span>
+            </button>
+            <button class="txn-btn withdrawal" id="txnWithdrawal"
+                    onclick="selectTxn('Withdrawal')" disabled>
+              🔴 Withdrawal<br><span>திரும்பப் பெறுதல்</span>
+            </button>
+          </div>
+          <div class="ch-voice-row" style="margin-top:8px">
+            <button class="ch-mic-btn" id="chMic-txn"
+                    onclick="challanVoiceStep('txn')" disabled>
+              🎤 <span>பேசுங்கள்</span>
+            </button>
+            <span class="ch-listening-text" id="chListen-txn" style="display:none">
+              🎤 கேட்கிறது...
+            </span>
+          </div>
+          <div class="ch-confirm-box" id="chConfirm-txn" style="display:none">
+            <span class="ch-confirm-label">தேர்வு:</span>
+            <span class="ch-confirm-value" id="chConfirmVal-txn"></span>
+            <div class="ch-confirm-btns">
+              <button class="ch-btn-yes" onclick="confirmStep('txn')">✅ சரி</button>
+              <button class="ch-btn-no"  onclick="rejectStep('txn')">❌ மாற்று</button>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- STEP 5: Amount -->
+      <div class="ch-step ch-step-locked" id="chStep-amount" data-step="amount">
+        <div class="ch-step-header">
+          <span class="ch-step-num">5</span>
+          <span class="ch-step-title">தொகை / Amount (₹)</span>
+          <span class="ch-step-badge" id="chBadge-amount"></span>
+        </div>
+        <div class="ch-step-body">
+          <div class="challan-input-row">
+            <input class="challan-input" type="tel" id="chInput-amount"
+                   placeholder="e.g. 5000"
+                   inputmode="numeric" pattern="[0-9]*"
+                   oninput="challanManualInput('amount', this.value)" disabled />
+            <!-- <button class="dialpad-icon-btn" id="chDialBtn-amount" disabled
+                    onclick="document.getElementById('chInput-amount').focus()">⌨</button> -->
+            <button class="dialpad-icon-btn" onclick="openDialpad('amount')">⌨</button>
+          </div>
+          <div class="ch-voice-row">
+            <button class="ch-mic-btn" id="chMic-amount"
+                    onclick="challanVoiceStep('amount')" disabled>
+              🎤 <span>பேசுங்கள்</span>
+            </button>
+            <span class="ch-listening-text" id="chListen-amount" style="display:none">
+              🎤 கேட்கிறது...
+            </span>
+          </div>
+          <div class="ch-confirm-box" id="chConfirm-amount" style="display:none">
+            <span class="ch-confirm-label">தொகை:</span>
+            <span class="ch-confirm-value" id="chConfirmVal-amount"></span>
+            <div class="ch-confirm-btns">
+              <button class="ch-btn-yes" onclick="confirmStep('amount')">✅ சரி</button>
+              <button class="ch-btn-no"  onclick="rejectStep('amount')">❌ மாற்று</button>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- STEP 6: Summary + Submit -->
+      <div class="ch-step ch-step-locked" id="chStep-summary" data-step="summary">
+        <div class="ch-step-header">
+          <span class="ch-step-num">6</span>
+          <span class="ch-step-title">உறுதிப்படுத்தல் / Final Confirmation</span>
+        </div>
+        <div class="ch-step-body">
+          <div class="ch-summary-table" id="chSummaryTable"></div>
+          <button class="challan-submit-btn" id="chFinalSubmit"
+                  onclick="finalChallanSubmit()" disabled>
+            ✓ சலான் சமர்ப்பிக்கவும் / Submit Challan
+          </button>
+        </div>
+      </div>
+ 
+    </div>
+ 
+    <!-- ── RIGHT: Voice guidance ───────────────────────────── -->
+    <div class="challan-right">
+      <div class="challan-voice-card">
+        <div class="challan-voice-title" id="chPromptTitle">🎤 குரல் வழிகாட்டி</div>
+        <div class="challan-voice-sub"   id="chPromptSub">
+          ஒவ்வொரு படியிலும் உங்கள் தகவலை பேசுங்கள் அல்லது தட்டச்சு செய்யுங்கள்.
+        </div>
+        <div class="challan-listen-indicator" id="challanListenIndicator" style="display:none">
+          <span class="listen-dot"></span>
+          <span class="listen-dot"></span>
+          <span class="listen-dot"></span>
+          <span class="listen-text">🎤 கேட்கிறது...</span>
+        </div>
+        <div class="challan-transcript" id="challanTranscript">
+          <span class="transcript-placeholder">குரல் உள்ளீடு இங்கே தோன்றும்...</span>
+        </div>
+        <div class="ch-error-msg" id="chErrorMsg" style="display:none"></div>
+      </div>
+ 
+      <!-- Step checklist -->
+      <div class="ch-checklist">
+        <div class="ch-checklist-title">படிகள் / Progress</div>
+        <div class="ch-check-item ch-active" id="chCheck-name">
+          <span class="ch-check-icon">▶</span> பெயர் / Name
+        </div>
+        <div class="ch-check-item" id="chCheck-account">
+          <span class="ch-check-icon">○</span> கணக்கு எண் / Account
+        </div>
+        <div class="ch-check-item" id="chCheck-bank">
+          <span class="ch-check-icon">○</span> வங்கி விவரம் / Bank
+        </div>
+        <div class="ch-check-item" id="chCheck-txn">
+          <span class="ch-check-icon">○</span> பரிவர்த்தனை / Transaction
+        </div>
+        <div class="ch-check-item" id="chCheck-amount">
+          <span class="ch-check-icon">○</span> தொகை / Amount
+        </div>
+      </div>
+    </div>
+ 
+  </div>
+</section>
+
   <!-- Debug panel (toggle) -->
   <div class="debug-panel" id="debugPanel">
     <div class="debug-header" onclick="toggleDebug()">
@@ -143,6 +427,14 @@
       <div><strong>Tamil Text:</strong> <span id="dbTamil">—</span></div>
       <div><strong>English:</strong> <span id="dbEnglish">—</span></div>
       <div><strong>Extracted:</strong> <pre id="dbExtracted">—</pre></div>
+      <div><strong>Model Used:</strong> <span id="dbModel">—</span></div>
+      <div class="metrics-row">
+        <strong>WER:</strong>
+        <span id="wer" class="metric-badge metric-wer">—</span>
+        &nbsp;&nbsp;
+        <strong>Accuracy:</strong>
+        <span id="accuracy" class="metric-badge metric-acc">—</span>
+      </div>
     </div>
   </div>
 
